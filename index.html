@@ -20,7 +20,7 @@
 
     <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-600">
         <h1 class="text-2xl font-bold text-gray-800 mb-2">SEO Content Architect (Hybrid AI)</h1>
-        <p class="text-sm text-gray-600 mb-6">JavaScript Rule-Based Clustering + GLM-5.1 Grammar Judge</p>
+        <p class="text-sm text-gray-600 mb-6">JavaScript Rule-Based Clustering + GPT-4o-mini Grammar Judge</p>
         
         <div class="flex gap-4 mb-4">
             <input type="password" id="apiKey" class="flex-1 p-2 border border-gray-300 rounded focus:ring-blue-500 text-sm" placeholder="Paste API Key SumoPod (sk-...) di sini">
@@ -28,7 +28,7 @@
 
         <div class="mb-4 bg-indigo-50 border border-indigo-200 p-4 rounded-lg flex items-center justify-between">
             <div>
-                <h3 class="font-bold text-indigo-800 text-sm mb-1">🔗 Integrasi Modul Kamus</h3>
+                <h3 class="font-bold text-indigo-800 text-sm mb-1"> Integrasi Modul Kamus</h3>
                 <p id="kamusStatus" class="text-xs text-indigo-600">Status: <span class="font-bold text-red-500">Belum ada file kamus.js yang di-upload (Kosong)</span></p>
             </div>
             <div>
@@ -71,7 +71,6 @@
             reader.onload = function(e) {
                 const content = e.target.result;
                 try {
-                    // Trik cerdas membaca variabel dari dalam file teks JS secara aman
                     const extractor = new Function(content + "\n return { stopWords: typeof stopWords !== 'undefined' ? stopWords : [], intentVerbs: typeof intentVerbs !== 'undefined' ? intentVerbs : [], entityFixes: typeof entityFixes !== 'undefined' ? entityFixes : {} };");
                     activeKamus = extractor();
                     
@@ -92,7 +91,6 @@
         function getClusterKey(keyword) {
             let clean = keyword.toLowerCase().replace(/[\.\-\_\']/g, ' ');
             
-            // Terapkan kamus yang baru saja di-upload
             for (let [wrong, correct] of Object.entries(activeKamus.entityFixes)) {
                 clean = clean.replace(new RegExp(`\\b${wrong}\\b`, 'g'), correct);
             }
@@ -145,7 +143,7 @@
                 aiPayload[key] = clusters[key].candidates;
             }
 
-            statusMsg.innerHTML = `<div class="loader"></div> 2/2: AI (GLM-5.1) sedang memfinalisasi grammar dari ${Object.keys(clusters).length} kelompok...`;
+            statusMsg.innerHTML = `<div class="loader"></div> 2/2: AI (GPT-4o-mini) sedang memfinalisasi grammar dari ${Object.keys(clusters).length} kelompok...`;
 
             const systemPrompt = `
             Anda adalah Juri Tata Bahasa Inggris tingkat lanjut untuk SEO.
@@ -166,7 +164,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
                     body: JSON.stringify({
-                        model: 'glm-5.1', 
+                        model: 'gpt-4o-mini',   // <-- PERBAIKAN: ganti glm-5.1 dengan model yang tersedia
                         messages: [
                             { role: "system", content: systemPrompt },
                             { role: "user", content: JSON.stringify(aiPayload) }
@@ -185,7 +183,18 @@
                 }
 
                 let aiText = jsonResponse.choices[0].message.content.replace(/```json/gi, '').replace(/```/g, '').trim();
-                const aiWinners = JSON.parse(aiText);
+                // Coba parse JSON, jika gagal, gunakan fallback
+                let aiWinners;
+                try {
+                    aiWinners = JSON.parse(aiText);
+                } catch (parseErr) {
+                    console.warn("AI response not valid JSON, using fallback:", aiText);
+                    // Fallback: gunakan kandidat pertama dari tiap cluster
+                    aiWinners = {};
+                    for (let key in clusters) {
+                        aiWinners[key] = clusters[key].candidates[0];
+                    }
+                }
 
                 parsedData = [];
                 for (let clusterKey in clusters) {
