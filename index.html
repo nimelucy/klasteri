@@ -14,6 +14,7 @@
             width: 20px; height: 20px; animation: spin 1s linear infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        select { min-width: 180px; }
     </style>
 </head>
 <body class="bg-gray-50 p-8 font-sans">
@@ -25,10 +26,7 @@
         <div class="flex flex-wrap gap-4 mb-4 items-center">
             <input type="password" id="apiKey" class="flex-1 p-2 border border-gray-300 rounded focus:ring-blue-500 text-sm" placeholder="Paste API Key SumoPod (sk-...) di sini">
             <select id="modelSelect" class="p-2 border border-gray-300 rounded text-sm bg-white">
-                <option value="gpt-4o">GPT-4o</option>
-                <option value="deepseek-chat">DeepSeek Chat</option>
-                <option value="claude-3-haiku">Claude 3 Haiku</option>
-                <option value="gpt-4o-mini" disabled>GPT-4o-mini (tidak tersedia)</option>
+                <!-- Opsi akan diisi oleh JavaScript dari daftar model -->
             </select>
         </div>
 
@@ -66,6 +64,61 @@
     </div>
 
     <script>
+        // --- DAFTAR MODEL SUMOPOD (dari daftar yang diberikan) ---
+        const AVAILABLE_MODELS = [
+            "claude-haiku-4-5",
+            "claude-opus-4-7",
+            "claude-opus-4-8",
+            "claude-sonnet-4-6",
+            "deepseek-v4-flash",
+            "deepseek-v4-pro",
+            "gemini/gemini-2.5-flash",
+            "gemini/gemini-2.5-flash-lite",
+            "gemini/gemini-3-flash-preview",
+            "gemini/gemini-3.1-flash-lite",
+            "gemini/gemini-3.1-pro-preview",
+            "gemini/gemini-3.5-flash",
+            "glm-5",
+            "glm-5-turbo",
+            "glm-5.1",
+            "glm-5.2",
+            "glm-5v-turbo",
+            "gpt-4.1",
+            "gpt-4.1-mini",
+            "gpt-4.1-nano",
+            "gpt-5",
+            "gpt-5-mini",
+            "gpt-5-nano",
+            "gpt-5.4",
+            "gpt-5.4-mini",
+            "gpt-5.4-nano",
+            "kimi-k2.6",
+            "kimi-k2.7",
+            "mimo-v2.5",
+            "mimo-v2.5-pro",
+            "MiniMax-M2.7-highspeed",
+            "MiniMax-M3",
+            "qwen3.6-flash",
+            "qwen3.6-plus",
+            "qwen3.7-max",
+            "qwen3.7-plus",
+            "seed-2-0-code",
+            "seed-2-0-lite",
+            "seed-2-0-mini",
+            "seed-2-0-pro"
+        ];
+
+        // Isi dropdown
+        const select = document.getElementById('modelSelect');
+        AVAILABLE_MODELS.forEach(model => {
+            const opt = document.createElement('option');
+            opt.value = model;
+            opt.textContent = model;
+            select.appendChild(opt);
+        });
+        // Set default ke glm-5.1 (karena sebelumnya dicoba)
+        select.value = 'glm-5.1';
+
         // --- 1. LOGIKA FILE READER (UPLOAD KAMUS) ---
         let activeKamus = { stopWords: [], intentVerbs: [], entityFixes: {} };
 
@@ -219,7 +272,8 @@
 
             } catch (err) {
                 console.error(err);
-                alert("Error API:\n" + err.message);
+                // Tampilkan error dengan saran ganti model
+                alert("Error API:\n" + err.message + "\n\nCoba ganti model lain dari dropdown dan ulangi.");
                 statusMsg.innerHTML = `<span class="text-red-600 font-bold">✗ Gagal memproses AI: ${err.message}</span>`;
             } finally {
                 btn.disabled = false;
